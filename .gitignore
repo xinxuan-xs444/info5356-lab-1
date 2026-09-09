@@ -1,2 +1,5 @@
 reachy_mini_env/
 reachy_mini_env/
+.DS_Store
+**/build/
+**/*.egg-info/
