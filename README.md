@@ -25,9 +25,9 @@ apps
     ├── style.css               # Landing page styles
     ├── pyproject.toml          # Package config with entry points
     ├── README.md               # Must contain reachy_mini_python_app tag
-    └── team_greeting_app
+    └── team_greeting_app       # An app that makes Reachymini do a greeting to the user
         ├── __init__.py
-        ├── main.py             # Your app logic
+        ├── main.py             # Our app logic
         └── static/             # Optional web UI
             ├── index.html
             ├── style.css
