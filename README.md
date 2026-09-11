@@ -17,6 +17,7 @@ simulation testing, and development of a custom greeting application (`team_gree
 - **MuJoCo Version:** 3.3.0
 
 ## Repository Structure
+```
 apps
 ├──team_greeting_app
     ├── index.html              # Hugging Face Space landing page
@@ -32,3 +33,4 @@ apps
             └── main.js
 .gitignore
 README.md
+```
