@@ -3,6 +3,7 @@ reachy_mini_env/
 .venv/
 venv/
 env/
+
 # Python bytecode, builds, and tool caches
 __pycache__/
 *.py[cod]
@@ -17,6 +18,7 @@ dist/
 .coverage.*
 htmlcov/
 .ipynb_checkpoints/
+
 # Local secrets (keep shareable examples)
 .env
 .env.*
@@ -25,6 +27,7 @@ htmlcov/
 *.pem
 *.key
 .ssh/
+
 # Editor and operating-system files
 .vscode/
 .idea/
@@ -35,6 +38,7 @@ htmlcov/
 ._*
 Thumbs.db
 Desktop.ini
+
 # Runtime output; report images, videos, and source assets remain trackable
 *.log
 logs/
