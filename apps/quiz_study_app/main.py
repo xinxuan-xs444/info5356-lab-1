@@ -32,11 +32,18 @@ already runs one):
 
     python main.py --participant P01 --sequence AB
     python main.py --participant P02 --sequence BA
-    python main.py --participant P03 --sequence AA
-    python main.py --participant P04 --sequence BB
+    python main.py --participant P03 --sequence AB --quiz-order 21
+    python main.py --participant P04 --sequence BA --quiz-order 21
 
-(With exactly 4 participants, one of each sequence gives full
-counterbalancing across all 4 condition-order combinations.)
+That gives:
+    P01: Condition A + Quiz 1 -> Condition B + Quiz 2
+    P02: Condition B + Quiz 1 -> Condition A + Quiz 2
+    P03: Condition A + Quiz 2 -> Condition B + Quiz 1
+    P04: Condition B + Quiz 2 -> Condition A + Quiz 1
+
+--quiz-order defaults to "12" (quiz set 1 first); pass "21" to ask quiz
+set 2 first instead. Which quiz set was used in which session is always
+recorded in the log's quiz_set column either way.
 """
 
 import argparse
@@ -55,6 +62,8 @@ from quiz_content import QUESTION_SETS
 # ---------------- Named parameters -- set these before each session ----------------
 PARTICIPANT_ID = "P01"          # de-identified ID, e.g. P01-P04
 CONDITION_SEQUENCE = "AB"       # one of "AB", "BA", "AA", "BB"
+QUIZ_ORDER = "12"               # "12" = quiz set 1 in session 1, set 2 in session 2 (default)
+                                 # "21" = quiz set 2 first, then quiz set 1
 
 MOVE_NAME_CORRECT = "yeah_nod"          # affirmative nod, played when correct
 MOVE_NAME_INCORRECT = "side_to_side_sway"  # "no" headshake, played when incorrect
@@ -84,6 +93,9 @@ def parse_args():
     parser.add_argument("--participant", required=True, help="De-identified participant ID, e.g. P01")
     parser.add_argument("--sequence", required=True, choices=["AB", "BA", "AA", "BB"],
                          help="Condition sequence for this participant's two sessions")
+    parser.add_argument("--quiz-order", default="12", choices=["12", "21"],
+                         help="Which quiz set goes first: '12' (default, set 1 then set 2) or "
+                              "'21' (set 2 then set 1)")
     return parser.parse_args()
 
 
@@ -144,15 +156,17 @@ class QuizStudyApp(ReachyMiniApp):
         log_rows = []
 
         conditions = list(CONDITION_SEQUENCE)
-        print(f"[{timestamp()}] STAGE=setup participant={PARTICIPANT_ID} sequence={CONDITION_SEQUENCE}")
+        quiz_set_ids = [1, 2] if QUIZ_ORDER == "12" else [2, 1]
+        print(f"[{timestamp()}] STAGE=setup participant={PARTICIPANT_ID} sequence={CONDITION_SEQUENCE} quiz_order={QUIZ_ORDER}")
 
         for session_idx, condition in enumerate(conditions, start=1):
             if stop_event.is_set():
                 break
             amplitude = 1.0 if condition == "B" else 0.0
-            question_set = QUESTION_SETS[session_idx]
+            quiz_set_id = quiz_set_ids[session_idx - 1]
+            question_set = QUESTION_SETS[quiz_set_id]
             session_start = time.time()
-            print(f"[{timestamp()}] STAGE=session_start session={session_idx} condition={condition}")
+            print(f"[{timestamp()}] STAGE=session_start session={session_idx} condition={condition} quiz_set={quiz_set_id}")
 
             for item in question_set:
                 if stop_event.is_set():
@@ -163,6 +177,7 @@ class QuizStudyApp(ReachyMiniApp):
                 log_rows.append({
                     "participant_id": PARTICIPANT_ID,
                     "session": session_idx,
+                    "quiz_set": quiz_set_id,
                     "condition": condition,
                     "question_id": item["id"],
                     "trial_outcome": outcome,
@@ -173,9 +188,10 @@ class QuizStudyApp(ReachyMiniApp):
                 })
 
             session_duration_s = time.time() - session_start
-            print(f"[{timestamp()}] STAGE=session_end session={session_idx} condition={condition} duration_s={session_duration_s:.2f}")
+            print(f"[{timestamp()}] STAGE=session_end session={session_idx} condition={condition} quiz_set={quiz_set_id} duration_s={session_duration_s:.2f}")
             log_rows.append({
-                "participant_id": PARTICIPANT_ID, "session": session_idx, "condition": condition,
+                "participant_id": PARTICIPANT_ID, "session": session_idx, "quiz_set": quiz_set_id,
+                "condition": condition,
                 "question_id": "SESSION_TOTAL", "trial_outcome": "", "correct": "",
                 "repeats": "", "note": f"duration_s={session_duration_s:.2f}",
                 "timestamp": timestamp(),
@@ -295,7 +311,7 @@ class QuizStudyApp(ReachyMiniApp):
     def _write_log(self, rows):
         LOG_DIR.mkdir(parents=True, exist_ok=True)
         fname = LOG_DIR / f"trial_log_{PARTICIPANT_ID}_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        fieldnames = ["participant_id", "session", "condition", "question_id", "trial_outcome", "correct", "repeats", "note", "timestamp"]
+        fieldnames = ["participant_id", "session", "quiz_set", "condition", "question_id", "trial_outcome", "correct", "repeats", "note", "timestamp"]
         with open(fname, "w", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
@@ -307,9 +323,10 @@ if __name__ == "__main__":
     args = parse_args()
     PARTICIPANT_ID = args.participant
     CONDITION_SEQUENCE = args.sequence
+    QUIZ_ORDER = args.quiz_order
 
     preflight_check()
-    print(f"[{timestamp()}] Starting session for participant={PARTICIPANT_ID} sequence={CONDITION_SEQUENCE}")
+    print(f"[{timestamp()}] Starting session for participant={PARTICIPANT_ID} sequence={CONDITION_SEQUENCE} quiz_order={QUIZ_ORDER}")
 
     app = QuizStudyApp()
     try:
