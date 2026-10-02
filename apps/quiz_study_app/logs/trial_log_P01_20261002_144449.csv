@@ -1,0 +1,13 @@
+participant_id,session,condition,question_id,trial_outcome,correct,repeats,note,timestamp
+P01,1,A,set1_q1,Completed,True,0,,14:32:23.555
+P01,1,A,set1_q2,Completed,True,0,,14:32:32.151
+P01,1,A,set1_q3,Completed,False,0,,14:32:50.413
+P01,1,A,set1_q4,Failed,,1,flagged by facilitator,14:33:12.872
+P01,1,A,set1_q5,Completed,True,0,,14:33:27.879
+P01,1,A,SESSION_TOTAL,,,,duration_s=87.62,14:33:27.879
+P01,2,B,set2_q1,Completed,True,1,,14:42:41.935
+P01,2,B,set2_q2,Completed,False,1,,14:43:15.486
+P01,2,B,set2_q3,Completed,False,1,,14:44:14.110
+P01,2,B,set2_q4,Completed,False,0,,14:44:40.512
+P01,2,B,set2_q5,Completed,True,0,,14:44:49.703
+P01,2,B,SESSION_TOTAL,,,,duration_s=675.69,14:44:49.703

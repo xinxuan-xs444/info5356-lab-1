@@ -131,8 +131,8 @@ class QuizStudyApp(ReachyMiniApp):
     # Force audio onto whatever machine runs this script (your laptop)
     # instead of WebRTC-to-the-robot, which was unreliable on this setup --
     # motor commands (gestures) still go to the real robot as normal.
-    # This mirrors the media_backend="local" fix confirmed working in
-    # demo_conditions.py.
+    # Kept consistent across ALL participants (P01-P04) so audio source
+    # is never a confound between sessions.
     request_media_backend = "local"
 
     def run(self, reachy_mini, stop_event):

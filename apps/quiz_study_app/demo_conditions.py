@@ -54,11 +54,12 @@ def main():
     # times out. Motor commands (set_target/goto_target) go through fine
     # over that relay already.
     #
-    # media_backend="local" (an explicit value, not "default"/"auto") skips
-    # WebRTC entirely and always plays audio on THIS machine's own speakers.
-    # Net effect: verbal feedback comes from the laptop, the robot itself
-    # performs the non-verbal gesture.
-    with ReachyMini(media_backend="local") as mini:
+    # media_backend="webrtc" (confirmed exact value from MediaBackend enum)
+    # forces WebRTC streaming to/from the daemon regardless of connection
+    # mode -- trying this again now that we understand the connection path,
+    # to see if audio actually comes out of the robot's own speaker this
+    # time instead of silently failing like before.
+    with ReachyMini(media_backend="webrtc") as mini:
         mini.media.start_playing()
 
         run_one_cycle(app, mini, stop_event, "A", amplitude=0.0, item=item_a, correct=True)
