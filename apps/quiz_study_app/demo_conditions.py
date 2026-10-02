@@ -48,7 +48,17 @@ def main():
     item_a = QUESTION_SETS[1][0]
     item_b = QUESTION_SETS[2][0]
 
-    with ReachyMini(media_backend="default") as mini:
+    # connection_mode is left as "auto" (the default) -- on this laptop,
+    # the only path that actually reaches the robot is through the Reachy
+    # Mini Control app's localhost:8000 relay; a direct "network" connection
+    # times out. Motor commands (set_target/goto_target) go through fine
+    # over that relay already.
+    #
+    # media_backend="local" (an explicit value, not "default"/"auto") skips
+    # WebRTC entirely and always plays audio on THIS machine's own speakers.
+    # Net effect: verbal feedback comes from the laptop, the robot itself
+    # performs the non-verbal gesture.
+    with ReachyMini(media_backend="local") as mini:
         mini.media.start_playing()
 
         run_one_cycle(app, mini, stop_event, "A", amplitude=0.0, item=item_a, correct=True)

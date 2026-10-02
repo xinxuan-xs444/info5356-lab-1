@@ -32,8 +32,11 @@ already runs one):
 
     python main.py --participant P01 --sequence AB
     python main.py --participant P02 --sequence BA
-    python main.py --participant P03 --sequence AB
-    python main.py --participant P04 --sequence BA
+    python main.py --participant P03 --sequence AA
+    python main.py --participant P04 --sequence BB
+
+(With exactly 4 participants, one of each sequence gives full
+counterbalancing across all 4 condition-order combinations.)
 """
 
 import argparse
@@ -125,6 +128,13 @@ def preflight_check():
 
 
 class QuizStudyApp(ReachyMiniApp):
+    # Force audio onto whatever machine runs this script (your laptop)
+    # instead of WebRTC-to-the-robot, which was unreliable on this setup --
+    # motor commands (gestures) still go to the real robot as normal.
+    # This mirrors the media_backend="local" fix confirmed working in
+    # demo_conditions.py.
+    request_media_backend = "local"
+
     def run(self, reachy_mini, stop_event):
         reachy_mini.media.start_playing()
         moves = {
