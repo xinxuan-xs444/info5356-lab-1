@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 apps/quiz_study_app/debug_capture.wav
 .DS_Store
+reachy_mini_env/

@@ -16,6 +16,7 @@ Requirements to keep in mind:
 
 import threading
 import time
+import signal
 
 import numpy as np
 
@@ -53,46 +54,51 @@ def _interruptible_wait(duration_s: float, stop_event: threading.Event, step_s: 
 
 class TeamGreetingApp(ReachyMiniApp):
     def run(self, reachy_mini: ReachyMini, stop_event: threading.Event):
-        # Stage 1: Orient
-        print(f"{timestamp()} - Stage 1: Orient")
-        oriented_head=create_head_pose(pitch=-10, z=15, mm=True, degrees=True)
-        reachy_mini.goto_target(head=oriented_head, duration=ORIENT_DURATION)
-        
-        if not _interruptible_wait(ORIENT_DURATION, stop_event):
-            print(f"{timestamp()} STOP requested during ORIENT")
-            self._return_to_neutral(reachy_mini, stop_event)
-            return
-
-        # Stage 2: Greet
-        print(
-            f"{timestamp()} - Stage 2: Greet"
-            f"(body_yaw_amplitude={BODY_YAW_AMPLITUDE} deg, antenna_amplitude={ANTENNA_WAVE_AMPLITUDE} deg)"
-            )
-
-        start_time = time.time()
-        while time.time() - start_time < GREET_DURATION:
-            if stop_event.is_set():
-                print(f"[{timestamp()}] STOP requested during GREET")
-                return
+        try: 
+            # Stage 1: Orient
+            print(f"{timestamp()} - Stage 1: Orient")
+            oriented_head=create_head_pose(pitch=-10, z=15, mm=True, degrees=True)
+            reachy_mini.goto_target(head=oriented_head, duration=ORIENT_DURATION)
             
+            if not _interruptible_wait(ORIENT_DURATION, stop_event):
+                print(f"{timestamp()} STOP requested during ORIENT")
+                return
 
-            t = time.time() - start_time
+            # Stage 2: Greet
+            print(
+                f"{timestamp()} - Stage 2: Greet"
+                f"(body_yaw_amplitude={BODY_YAW_AMPLITUDE} deg, antenna_amplitude={ANTENNA_WAVE_AMPLITUDE} deg)"
+                )
 
-            #Body shimmies side to side
-            body_yaw_deg = BODY_YAW_AMPLITUDE * np.sin(2 * np.pi * WIGGLE_FREQUENCY * t)
-            body_yaw_rad = np.deg2rad(body_yaw_deg)
+            start_time = time.time()
+            while time.time() - start_time < GREET_DURATION:
+                if stop_event.is_set():
+                    print(f"[{timestamp()}] STOP requested during GREET")
+                    return
+                
 
-            #Antennas fultter at double speed 
-            antenna_deg = ANTENNA_WAVE_AMPLITUDE * np.sin(2 * np.pi * 2 * WIGGLE_FREQUENCY * t + np.pi/4)
-            antenna_rad = np.deg2rad(antenna_deg)
-            antennas = np.array([antenna_rad, -antenna_rad])
+                t = time.time() - start_time
 
-            reachy_mini.set_target(body_yaw=body_yaw_rad, antennas = antennas)
-            time.sleep(0.02)
+                #Body shimmies side to side
+                body_yaw_deg = BODY_YAW_AMPLITUDE * np.sin(2 * np.pi * WIGGLE_FREQUENCY * t)
+                body_yaw_rad = np.deg2rad(body_yaw_deg)
+
+                #Antennas fultter at double speed 
+                antenna_deg = ANTENNA_WAVE_AMPLITUDE * np.sin(2 * np.pi * 2 * WIGGLE_FREQUENCY * t + np.pi/4)
+                antenna_rad = np.deg2rad(antenna_deg)
+                antennas = np.array([antenna_rad, -antenna_rad])
+
+                reachy_mini.set_target(body_yaw=body_yaw_rad, antennas = antennas)
+                time.sleep(0.02)
 
 
         # Stage 3: Neutral
-        self._return_to_neutral(reachy_mini, stop_event)
+        finally:
+            # either completed or interrupted, return to neutral state
+            self._return_to_neutral(reachy_mini, stop_event)
+            
+        print(f"{timestamp()} - Waiting for Ctrl+C")
+        stop_event.wait()
 
     def _return_to_neutral(self, reachy_mini: ReachyMini, stop_event: threading.Event) -> None:
         print(f"[{timestamp()}] STAGE 3/3: RETURN TO NEUTRAL")
@@ -103,12 +109,18 @@ class TeamGreetingApp(ReachyMiniApp):
             body_yaw=0.0,
             duration=NEUTRAL_DURATION,
         )
-        _interruptible_wait(NEUTRAL_DURATION, stop_event)
-        print(f"[{timestamp()}] DONE - returned to neutral, app stopping")
+        print(f"[{timestamp()}] - Returned to neutral.")
 
 if __name__ == "__main__":
     app = TeamGreetingApp()
-    try:
-        app.wrapped_run()
-    except KeyboardInterrupt:
+    # try:
+    #    app.wrapped_run()
+    # except KeyboardInterrupt:
+    #    app.stop()
+    
+    # turn Ctrl+C commend to a signal instead of KeyboardInterrupt
+    def request_stop(signum, frame):
         app.stop()
+        
+    signal.signal(signal.SIGINT, request_stop)
+    app.wrapped_run()
